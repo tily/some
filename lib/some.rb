@@ -1,8 +1,8 @@
-require 'AWS'
+require 'NIFTY'
 require 'yaml'
 require 'socket'
 
-class Sumo
+class Some
 	def launch
 		ami = config['ami']
 		raise "No AMI selected" unless ami
@@ -12,12 +12,13 @@ class Sumo
 		create_security_group
 		open_firewall(22)
 
-		result = ec2.run_instances(
+		result = api.run_instances(
 			:image_id => ami,
-			:instance_type => config['instance_size'] || 'm1.small',
-			:key_name => 'sumo',
-			:group_id => [ 'sumo' ],
-			:availability_zone => config['availability_zone']
+			:instance_type => config['instance_size'] || 'mini',
+			:key_name => 'something',
+			:security_group => 'something',
+			:availability_zone => config['availability_zone'],
+                        :disable_api_termination => false
 		)
 		result.instancesSet.item[0].instanceId
 	end
@@ -27,7 +28,7 @@ class Sumo
 	end
 
 	def volumes
-		result = ec2.describe_volumes
+		result = api.describe_volumes
 		return [] unless result.volumeSet
 
 		result.volumeSet.item.map do |row|
@@ -54,7 +55,7 @@ class Sumo
 	end
 
 	def attach(volume, instance, device)
-		result = ec2.attach_volume(
+		result = api.attach_volume(
 			:volume_id => volume,
 			:instance_id => instance,
 			:device => device
@@ -63,12 +64,12 @@ class Sumo
 	end
 
 	def detach(volume)
-		result = ec2.detach_volume(:volume_id => volume, :force => "true")
+		result = api.detach_volume(:volume_id => volume, :force => "true")
 		"done"
 	end
 
 	def create_volume(size)
-		result = ec2.create_volume(
+		result = api.create_volume(
 			:availability_zone => config['availability_zone'],
 			:size => size.to_s
 		)
@@ -76,12 +77,12 @@ class Sumo
 	end
 
 	def destroy_volume(volume)
-		ec2.delete_volume(:volume_id => volume)
+		api.delete_volume(:volume_id => volume)
 		"done"
 	end
 
 	def fetch_list
-		result = ec2.describe_instances
+		result = api.describe_instances
 		return [] unless result.reservationSet
 
 		instances = []
@@ -102,8 +103,7 @@ class Sumo
 		id_or_hostname = id_or_hostname.strip.downcase
 		list.detect do |inst|
 			inst[:hostname] == id_or_hostname or
-			inst[:instance_id] == id_or_hostname or
-			inst[:instance_id].gsub(/^i-/, '') == id_or_hostname
+			inst[:instance_id] == id_or_hostname
 		end
 	end
 
@@ -135,7 +135,7 @@ class Sumo
 	end
 
 	def wait_for_hostname(instance_id)
-		raise ArgumentError unless instance_id and instance_id.match(/^i-/)
+		raise ArgumentError unless instance_id
 		loop do
 			if inst = instance_info(instance_id)
 				if hostname = inst[:hostname]
@@ -159,32 +159,35 @@ class Sumo
 		end
 	end
 
+        # TODO: -r でレシピをダウンロードするように変更する
+=begin
+  some launch rabbitmq
+  /etc/chef/solo.rb
+  /etc/chef/dna.json
+=end
 	def bootstrap_chef(hostname)
 		commands = [
-			'apt-get update',
-			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev rubygems git-core',
-			'gem sources -a http://gems.opscode.com',
-			'gem install chef ohai --no-rdoc --no-ri',
-			"git clone #{config['cookbooks_url']}",
+                        "curl -L https://www.opscode.com/chef/install.sh | bash",
+                        "mkdir -p /var/chef/cookbooks /etc/chef",
+                        "echo json_attribs \\'/etc/chef/dna.json\\' > /etc/chef/solo.rb"
 		]
 		ssh(hostname, commands)
 	end
 
 	def setup_role(hostname, role)
 		commands = [
-			"cd chef-cookbooks",
-			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
+                        "echo \'#{config['role'][role]}\' > /etc/chef/dna.json",
+			"chef-solo -r #{config['cookbooks_url']}"
 		]
 		ssh(hostname, commands)
 	end
 
 	def ssh(hostname, cmds)
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.some/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
 		end
 		unless $?.success?
-			abort "failed\nCheck ~/.sumo/ssh.log for the output"
+			abort "failed\nCheck ~/.some/ssh.log for the output"
 		end
 	end
 
@@ -207,11 +210,25 @@ class Sumo
 	end
 
 	def terminate(instance_id)
-		ec2.terminate_instances(:instance_id => [ instance_id ])
+                inst = instance_info(instance_id)
+                if inst[:status] != 'stopped'
+                        api.stop_instances(:instance_id => [ instance_id ])
+                        puts "waiting for #{instance_id} to stop "
+		        loop do
+                                print '.'
+		        	if inst = instance_info(instance_id)
+		        		if inst[:status] == 'stopped'
+                                                break
+		        		end
+		        	end
+		        	sleep 5
+		        end
+                end
+		api.terminate_instances(:instance_id => [ instance_id ])
 	end
 
 	def console_output(instance_id)
-		ec2.get_console_output(:instance_id => instance_id)["output"]
+		api.get_console_output(:instance_id => instance_id)["output"]
 	end
 
 	def config
@@ -222,57 +239,65 @@ class Sumo
 		{
 			'user' => 'root',
 			'ami' => 'ami-ed46a784',
-			'availability_zone' => 'us-east-1b'
+			'availability_zone' => 'east-12',
+                        'password' => 'password'
 		}
 	end
 
-	def sumo_dir
-		"#{ENV['HOME']}/.sumo"
+	def some_dir
+		"#{ENV['HOME']}/.some"
 	end
 
 	def read_config
-		YAML.load File.read("#{sumo_dir}/config.yml")
+		YAML.load File.read("#{some_dir}/config.yml")
 	rescue Errno::ENOENT
-		raise "Sumo is not configured, please fill in ~/.sumo/config.yml"
+		raise "Some is not configured, please fill in ~/.some/config.yml"
 	end
 
 	def keypair_file
-		"#{sumo_dir}/keypair.pem"
+		"#{some_dir}/keypair.pem"
 	end
 
 	def create_keypair
-		keypair = ec2.create_keypair(:key_name => "sumo").keyMaterial
-		File.open(keypair_file, 'w') { |f| f.write keypair }
+		keypair = api.create_key_pair(:key_name => "something", :password => config['password']).keyMaterial
+		File.open(keypair_file, 'w') { |f| f.write Base64.decode64(keypair) }
 		File.chmod 0600, keypair_file
 	end
 
 	def create_security_group
-		ec2.create_security_group(:group_name => 'sumo', :group_description => 'Sumo')
-	rescue AWS::InvalidGroupDuplicate
+		api.create_security_group(:group_name => 'something', :group_description => 'Something')
+	rescue NIFTY::ResponseError => e
+                if e.message != "The groupName 'something' already exists."
+                        raise e
+                end
 	end
 
 	def open_firewall(port)
-		ec2.authorize_security_group_ingress(
-			:group_name => 'sumo',
-			:ip_protocol => 'tcp',
-			:from_port => port,
-			:to_port => port,
-			:cidr_ip => '0.0.0.0/0'
+		api.authorize_security_group_ingress(
+			:group_name => 'something',
+                        :ip_permissions => {
+			        :ip_protocol => 'tcp',
+			        :from_port => port,
+			        :to_port => port,
+			        :cidr_ip => '0.0.0.0/0'
+                        }
 		)
-	rescue AWS::InvalidPermissionDuplicate
+	rescue NIFTY::ResponseError => e
+                raise e
 	end
 
-	def ec2
-    @ec2 ||= AWS::EC2::Base.new(
-      :access_key_id => config['access_id'], 
-      :secret_access_key => config['access_secret'], 
-      :server => server
-    )
+	def api
+                @api ||= NIFTY::Cloud::Base.new(
+                  :access_key => config['access_key'], 
+                  :secret_key => config['secret_key'], 
+                  :server => server,
+                  :path => '/api'
+                )
 	end
 	
 	def server
-	  zone = config['availability_zone']
-	  host = zone.slice(0, zone.length - 1)
-	  "#{host}.ec2.amazonaws.com"
+	        zone = config['availability_zone']
+	        host = zone.slice(0, zone.length - 1)
+	        "#{host}.cp.cloud.nifty.com"
   end
 end
