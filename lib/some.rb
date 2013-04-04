@@ -159,12 +159,6 @@ class Some
 		end
 	end
 
-        # TODO: -r でレシピをダウンロードするように変更する
-=begin
-  some launch rabbitmq
-  /etc/chef/solo.rb
-  /etc/chef/dna.json
-=end
 	def bootstrap_chef(hostname)
 		commands = [
                         "curl -L https://www.opscode.com/chef/install.sh | bash",
