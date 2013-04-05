@@ -280,10 +280,10 @@ class Some
 
 	def api
                 @api ||= NIFTY::Cloud::Base.new(
-                  :access_key => config['access_key'], 
-                  :secret_key => config['secret_key'], 
-                  :server => server,
-                  :path => '/api'
+                        :access_key => config['access_key'], 
+                        :secret_key => config['secret_key'], 
+                        :server => server,
+                        :path => '/api'
                 )
 	end
 	
