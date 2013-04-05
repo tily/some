@@ -1,3 +1,4 @@
+require 'net/ssh'
 require 'NIFTY'
 require 'yaml'
 require 'socket'
@@ -192,12 +193,12 @@ class Some
 	end
 
 	def ssh(hostname, cmds)
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.some/ssh.log 2>&1", "w") do |pipe|
-			pipe.puts cmds.join(' && ')
-		end
-		unless $?.success?
-			abort "failed\nCheck ~/.some/ssh.log for the output"
-		end
+                Net::SSH.start(hostname, config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
+                        File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
+                                f.write(ssh.exec!(cmds.join(' && ')))
+                        end
+                end
+		# TODO: abort "failed\nCheck ~/.some/ssh.log for the output"
 	end
 
 	def resources(hostname)
