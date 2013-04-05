@@ -73,63 +73,12 @@ class CLI < Thor
 		end
 	end
 
-	desc "console [<instance_id or hostname>]", "get console output for instance or first available"
-	def console(id=nil)
-		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
-
-		puts some.console_output(inst[:instance_id]).inspect
-	end
-
 	desc "terminate [<instance_id or hostname>]", "terminate specified instance or first available"
 	def terminate(id=nil)
 		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
 
 		some.terminate(inst[:instance_id])
 		puts "#{inst[:hostname] || inst[:instance_id]} scheduled for termination"
-	end
-
-	desc "terminate_all", "terminate all instances"
-	def terminate_all
-		instances = (some.running | some.pending)
-		abort("No running or pending instances") if instances.empty?
-		instances.each do |inst|
-			some.terminate(inst[:instance_id])
-			puts "#{inst[:hostname] || inst[:instance_id]} scheduled for termination"
-		end
-	end
-
-	desc "volumes", "list all volumes"
-	def volumes
-		some.volumes.each do |v|
-			printf "%-10s %4sGB %10s %15s %15s\n", v[:volume_id], v[:size], v[:status], v[:instance], v[:device]
-		end
-	end
-
-	desc "create_volume [<megabytes>]", "create a volume"
-	def create_volume(size=5)
-		task("Create #{size}GB volume") { some.create_volume(size) }
-	end
-
-	desc "destroy_volume [<volume_id>]", "destroy a volume"
-	def destroy_volume(volume=nil)
-		vol_id = (some.find_volume(volume) || some.nondestroyed_volumes.first || abort("No volumes"))[:volume_id]
-		task("Destroy volume") { some.destroy_volume(vol_id) }
-	end
-
-	desc "attach [<volume_id>] [<instance_id or hostname>] [<device>]", "attach volume to running instance"
-	def attach(volume=nil, inst_id=nil, device=nil)
-		vol_id = (some.find_volume(volume) || some.available_volumes.first || abort("No available volumes"))[:volume_id]
-		inst_id = (some.find(inst_id) || some.running.first || abort("No running instances"))[:instance_id]
-		device ||= '/dev/sdc1'
-		task("Attach #{vol_id} to #{inst_id} as #{device}") do
-			some.attach(vol_id, inst_id, device)
-		end
-	end
-
-	desc "detach [<volume_id>]", "detach volume from instance"
-	def detach(volume=nil)
-		vol_id = (some.find_volume(volume) || some.attached_volumes.first || abort("No attached volumes"))[:volume_id]
-		task("Detach #{vol_id}") { some.detach(vol_id) }
 	end
 
 	no_tasks do
