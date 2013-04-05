@@ -220,25 +220,7 @@ class Some
 	end
 
 	def terminate(instance_id)
-                inst = instance_info(instance_id)
-                if inst[:status] != 'stopped'
-                        api.stop_instances(:instance_id => [ instance_id ])
-                        puts "waiting for #{instance_id} to stop "
-		        loop do
-                                print '.'
-		        	if inst = instance_info(instance_id)
-		        		if inst[:status] == 'stopped'
-                                                break
-		        		end
-		        	end
-		        	sleep 5
-		        end
-                end
 		api.terminate_instances(:instance_id => [ instance_id ])
-	end
-
-	def console_output(instance_id)
-		api.get_console_output(:instance_id => instance_id)["output"]
 	end
 
 	def config
