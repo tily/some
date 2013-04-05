@@ -230,7 +230,7 @@ class Some
 	def default_config
 		{
 			'user' => 'root',
-			'ami' => 'ami-ed46a784',
+			'ami' => 26,
 			'availability_zone' => 'east-12',
                         'password' => 'password'
 		}
