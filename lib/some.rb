@@ -146,6 +146,21 @@ class Some
 		end
 	end
 
+	def wait_to_stop(instance_id)
+		raise ArgumentError unless instance_id
+                api.stop_instances(:instance_id => [ instance_id ])
+                puts "waiting for #{instance_id} to stop "
+		loop do
+                        print '.'
+			if inst = instance_info(instance_id)
+				if inst[:status] == 'stopped'
+                                        break
+				end
+			end
+			sleep 5
+		end
+	end
+
 	def wait_for_ssh(hostname)
 		raise ArgumentError unless hostname
 		loop do

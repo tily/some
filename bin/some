@@ -76,7 +76,11 @@ class CLI < Thor
 	desc "terminate [<instance_id or hostname>]", "terminate specified instance or first available"
 	def terminate(id=nil)
 		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
-
+                if inst[:status] != 'stopped'
+                        task 'Wait to stop' do
+                                some.wait_to_stop(inst[:instance_id])
+                        end
+                end
 		some.terminate(inst[:instance_id])
 		puts "#{inst[:hostname] || inst[:instance_id]} scheduled for termination"
 	end
