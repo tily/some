@@ -10,7 +10,7 @@ Jeweler::Tasks.new do |s|
 	s.rubyforge_project = "some"
 	s.files = FileList["[A-Z]*", "{bin,lib,spec}/**/*"]
 	s.executables = %w(some)
-	s.add_dependency "nifty-cloud-sdk"
+	s.add_dependency "nifty-cloud-sdk", "1.11.beta1"
 	s.add_dependency "thor"
 end
 
