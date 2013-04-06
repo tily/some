@@ -102,6 +102,11 @@ NIFTY Cloud 上で手軽にサーバーを立ち上げることができます�
     $ some role mysql 923d7772
     ---> Setup mysql...           done (184.6s)
 
+## 詳細
+
+ * サーバー作成の際に something という名前の SSH キーと FW を作成します
+ * SSH キーは ~/.some/keypair.pem に保存されます
+
 ## ライセンス
 
 [sumo](http://github.com/adamwiggins/sumo) と同じく MIT ライセンスで公開します。
