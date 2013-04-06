@@ -227,7 +227,7 @@ class Some
 		{
 			'user' => 'root',
 			'ami' => 26,
-			'availability_zone' => 'east-12',
+			'availability_zone' => 'west-11',
 			'password' => 'password'
 		}
 	end
