@@ -249,13 +249,13 @@ class Some
 			:group_name => 'something',
 			:ip_permissions => {
 				:ip_protocol => 'TCP',
-                                :in_out => 'IN',
+				:in_out => 'IN',
 				:from_port => port,
 				:to_port => port,
 				:cidr_ip => '0.0.0.0/0'
 			}
 		}
-                return if find_security_group_ingress(target)
+		return if find_security_group_ingress(target)
 		api.authorize_security_group_ingress(target)
 	end
 
@@ -264,13 +264,13 @@ class Some
 			:group_name => 'something',
 			:ip_permissions => {
 				:ip_protocol => 'TCP',
-                                :in_out => 'IN',
+				:in_out => 'IN',
 				:from_port => port,
 				:to_port => port,
 				:cidr_ip => '0.0.0.0/0'
 			}
 		}
-                return unless find_security_group_ingress(target)
+		return unless find_security_group_ingress(target)
 		api.revoke_security_group_ingress(target)
 	end
 
@@ -282,8 +282,8 @@ class Some
 		return nil if !security_group || !security_group.ipPermissions
 		security_group.ipPermissions.item.find {|ip_permission|
 			flag = (
-			  ip_permission.ipProtocol == target[:ip_permissions][:ip_protocol] &&
-			  ip_permission.inOut      == target[:ip_permissions][:in_out]
+				ip_permission.ipProtocol == target[:ip_permissions][:ip_protocol] &&
+				ip_permission.inOut == target[:ip_permissions][:in_out]
 			)
 			# also compare from_port when ip_protocol is not ICMP but TCP or UDP
 			if target[:ip_permissions][:ip_protocol] != 'ICMP'
@@ -292,7 +292,7 @@ class Some
 			if ip_permission.groups
 				flag = flag && (ip_permission.groups.item.first.groupName == target[:ip_permissions][:group_name])
 			else
-				flag = flag && (ip_permission.ipRanges.item.first.cidrIp  == target[:ip_permissions][:cidr_ip])
+				flag = flag && (ip_permission.ipRanges.item.first.cidrIp == target[:ip_permissions][:cidr_ip])
 			end
 			flag
 		}
