@@ -71,6 +71,13 @@ class CLI < Thor
 		puts "port #{port} scheduled for open"
 	end
 
+	desc "closefw <port>", "close firewall"
+	def closefw(port)
+		raise ArgumentError unless port
+		some.close_firewall(port)
+		puts "port #{port} scheduled for open"
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new

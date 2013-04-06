@@ -259,6 +259,21 @@ class Some
 		api.authorize_security_group_ingress(target)
 	end
 
+	def close_firewall(port)
+		target = {
+			:group_name => 'something',
+			:ip_permissions => {
+				:ip_protocol => 'TCP',
+                                :in_out => 'IN',
+				:from_port => port,
+				:to_port => port,
+				:cidr_ip => '0.0.0.0/0'
+			}
+		}
+                return unless find_security_group_ingress(target)
+		api.revoke_security_group_ingress(target)
+	end
+
 	def find_security_group_ingress(target)
 		res = api.describe_security_groups
 		security_group = res.securityGroupInfo.item.find {|security_group|
