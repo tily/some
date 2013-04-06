@@ -19,7 +19,7 @@ class Some
 			:key_name => 'something',
 			:security_group => 'something',
 			:availability_zone => config['availability_zone'],
-                        :disable_api_termination => false
+			:disable_api_termination => false
 		)
 		result.instancesSet.item[0].instanceId
 	end
@@ -149,13 +149,11 @@ class Some
 
 	def wait_to_stop(instance_id)
 		raise ArgumentError unless instance_id
-                api.stop_instances(:instance_id => [ instance_id ])
-                puts "waiting for #{instance_id} to stop "
+		api.stop_instances(:instance_id => [ instance_id ])
 		loop do
-                        print '.'
 			if inst = instance_info(instance_id)
 				if inst[:status] == 'stopped'
-                                        break
+					break
 				end
 			end
 			sleep 5
@@ -177,46 +175,28 @@ class Some
 
 	def bootstrap_chef(hostname)
 		commands = [
-                        "curl -L https://www.opscode.com/chef/install.sh | bash",
-                        "mkdir -p /var/chef/cookbooks /etc/chef",
-                        "echo json_attribs \\'/etc/chef/dna.json\\' > /etc/chef/solo.rb"
+			"curl -L https://www.opscode.com/chef/install.sh | bash",
+			"mkdir -p /var/chef/cookbooks /etc/chef",
+			"echo json_attribs \\'/etc/chef/dna.json\\' > /etc/chef/solo.rb"
 		]
 		ssh(hostname, commands)
 	end
 
 	def setup_role(hostname, role)
 		commands = [
-                        "echo \'#{config['role'][role]}\' > /etc/chef/dna.json",
+			"echo \'#{config['role'][role]}\' > /etc/chef/dna.json",
 			"chef-solo -r #{config['cookbooks_url']}"
 		]
 		ssh(hostname, commands)
 	end
 
 	def ssh(hostname, cmds)
-                Net::SSH.start(hostname, config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
-                        File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
-                                f.write(ssh.exec!(cmds.join(' && ')))
-                        end
-                end
-		# TODO: abort "failed\nCheck ~/.some/ssh.log for the output"
-	end
-
-	def resources(hostname)
-		@resources ||= {}
-		@resources[hostname] ||= fetch_resources(hostname)
-	end
-
-	def fetch_resources(hostname)
-		cmd = "ssh -i #{keypair_file} #{config['user']}@#{hostname} 'cat /root/resources' 2>&1"
-		out = IO.popen(cmd, 'r') { |pipe| pipe.read }
-		abort "failed to read resources, output:\n#{out}" unless $?.success?
-		parse_resources(out, hostname)
-	end
-
-	def parse_resources(raw, hostname)
-		raw.split("\n").map do |line|
-			line.gsub(/localhost/, hostname)
+		Net::SSH.start(hostname, config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
+			File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
+				f.write(ssh.exec!(cmds.join(' && ')))
+			end
 		end
+		# TODO: abort "failed\nCheck ~/.some/ssh.log for the output"
 	end
 
 	def terminate(instance_id)
@@ -232,7 +212,7 @@ class Some
 			'user' => 'root',
 			'ami' => 26,
 			'availability_zone' => 'east-12',
-                        'password' => 'password'
+			'password' => 'password'
 		}
 	end
 
@@ -259,37 +239,62 @@ class Some
 	def create_security_group
 		api.create_security_group(:group_name => 'something', :group_description => 'Something')
 	rescue NIFTY::ResponseError => e
-                if e.message != "The groupName 'something' already exists."
-                        raise e
-                end
+		if e.message != "The groupName 'something' already exists."
+			raise e
+		end
 	end
 
 	def open_firewall(port)
-		api.authorize_security_group_ingress(
+		target = {
 			:group_name => 'something',
-                        :ip_permissions => {
-			        :ip_protocol => 'tcp',
-			        :from_port => port,
-			        :to_port => port,
-			        :cidr_ip => '0.0.0.0/0'
-                        }
-		)
-	rescue NIFTY::ResponseError => e
-                raise e
+			:ip_permissions => {
+				:ip_protocol => 'TCP',
+                                :in_out => 'IN',
+				:from_port => port,
+				:to_port => port,
+				:cidr_ip => '0.0.0.0/0'
+			}
+		}
+                return if find_security_group_ingress(target)
+		api.authorize_security_group_ingress(target)
+	end
+
+	def find_security_group_ingress(target)
+		res = api.describe_security_groups
+		security_group = res.securityGroupInfo.item.find {|security_group|
+			security_group.groupName == target[:group_name]
+		}
+		return nil if !security_group || !security_group.ipPermissions
+		security_group.ipPermissions.item.find {|ip_permission|
+			flag = (
+			  ip_permission.ipProtocol == target[:ip_permissions][:ip_protocol] &&
+			  ip_permission.inOut      == target[:ip_permissions][:in_out]
+			)
+			# also compare from_port when ip_protocol is not ICMP but TCP or UDP
+			if target[:ip_permissions][:ip_protocol] != 'ICMP'
+				flag = flag && (ip_permission.fromPort == target[:ip_permissions][:from_port].to_s)
+			end
+			if ip_permission.groups
+				flag = flag && (ip_permission.groups.item.first.groupName == target[:ip_permissions][:group_name])
+			else
+				flag = flag && (ip_permission.ipRanges.item.first.cidrIp  == target[:ip_permissions][:cidr_ip])
+			end
+			flag
+		}
 	end
 
 	def api
-                @api ||= NIFTY::Cloud::Base.new(
-                        :access_key => config['access_key'], 
-                        :secret_key => config['secret_key'], 
-                        :server => server,
-                        :path => '/api'
-                )
+		@api ||= NIFTY::Cloud::Base.new(
+			:access_key => config['access_key'], 
+			:secret_key => config['secret_key'], 
+			:server => server,
+			:path => '/api'
+		)
 	end
 	
 	def server
-	        zone = config['availability_zone']
-	        host = zone.slice(0, zone.length - 1)
-	        "#{host}.cp.cloud.nifty.com"
-  end
+		zone = config['availability_zone']
+		host = zone.slice(0, zone.length - 1)
+		"#{host}.cp.cloud.nifty.com"
+	end
 end

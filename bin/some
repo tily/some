@@ -14,21 +14,7 @@ class CLI < Thor
 
 		if role
 			task("Bootstrap chef") { some.bootstrap_chef(host) }
-			role.split(',').each do |role|
-				task("Setup #{role}") { some.setup_role(host, role) }
-			end
-
-			resources = some.resources(host)
-			unless resources.empty?
-				task("Open firewall") do
-					ports = resources.map { |r| r.match(/:(\d+)\//)[1] }
-					ports.each { |port| some.open_firewall(port) }
-					"ports " + ports.join(", ")
-				end
-			end
-
-			puts
-			display_resources(host)
+			task("Setup #{role}") { some.setup_role(host, role) }
 		else
 			puts "\nLogging you in via ssh.  Type 'exit' or Ctrl-D to return to your local system."
 			puts '-' * 78
@@ -41,13 +27,6 @@ class CLI < Thor
 		inst = some.find(id) || some.running.first || abort("No running instances")
 		hostname = inst[:hostname] || wait_for_hostname(inst[:instance_id])
 		connect_ssh hostname
-	end
-
-	desc "resources [<instance_id or hostname>]", "show resources exported by an instance"
-	def resources(id=nil)
-		inst = some.find(id) || some.running.first || abort("No running instances")
-		hostname = inst[:hostname] || wait_for_hostname(inst[:instance_id])
-		display_resources(inst[:hostname])
 	end
 
 	desc "bootstrap", "bootstrap chef and cookbooks"
@@ -76,13 +55,20 @@ class CLI < Thor
 	desc "terminate [<instance_id or hostname>]", "terminate specified instance or first available"
 	def terminate(id=nil)
 		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
-                if inst[:status] != 'stopped'
-                        task 'Wait to stop' do
-                                some.wait_to_stop(inst[:instance_id])
-                        end
-                end
+		if inst[:status] != 'stopped'
+			task 'Wait to stop' do
+				some.wait_to_stop(inst[:instance_id])
+			end
+		end
 		some.terminate(inst[:instance_id])
 		puts "#{inst[:hostname] || inst[:instance_id]} scheduled for termination"
+	end
+
+	desc "openfw <port>", "open firewall"
+	def openfw(port)
+		raise ArgumentError unless port
+		some.open_firewall(port)
+		puts "port #{port} scheduled for open"
 	end
 
 	no_tasks do
@@ -109,16 +95,6 @@ class CLI < Thor
 			system "ssh -i #{some.keypair_file} #{config['user']}@#{hostname}"
 			if $?.success?
 				puts "\nType 'some terminate' if you're done with this instance."
-			end
-		end
-
-		def display_resources(host)
-			resources = some.resources(host)
-			unless resources.empty?
-				puts "Your instance is exporting the following resources:"
-				resources.each do |resource|
-					puts "  #{resource}"
-				end
 			end
 		end
 	end
