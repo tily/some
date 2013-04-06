@@ -11,6 +11,7 @@ class Some
 		create_keypair unless File.exists? keypair_file
 
 		create_security_group
+		wait_for_security_group
 		open_firewall(22)
 
 		result = api.run_instances(
@@ -89,6 +90,7 @@ class Some
 
 		instances = []
 		result.reservationSet.item.each do |r|
+			next unless r.groupSet.nil? || r.groupSet.item.first.groupId == 'something'
 			r.instancesSet.item.each do |item|
 				instances << {
 					:instance_id => item.instanceId,
@@ -156,6 +158,16 @@ class Some
 				if inst[:status] == 'stopped'
 					break
 				end
+			end
+			sleep 5
+		end
+	end
+
+	def wait_to_terminate(instance_id)
+		raise ArgumentError unless instance_id
+		loop do
+			unless inst = instance_info(instance_id)
+				break
 			end
 			sleep 5
 		end
@@ -240,12 +252,50 @@ class Some
 		File.chmod 0600, keypair_file
 	end
 
+	def delete_keypair
+		api.delete_key_pair(:key_name => "something") if find_keypair
+		File.unlink(keypair_file) if File.exists? keypair_file
+		"done"
+	end
+
+	def find_keypair
+		api.describe_key_pairs.keySet.item.find {|keypair| keypair.keyName == 'something' }
+	end
+
 	def create_security_group
 		api.create_security_group(:group_name => 'something', :group_description => 'Something')
 	rescue NIFTY::ResponseError => e
 		if e.message != "The groupName 'something' already exists."
 			raise e
 		end
+	end
+
+	def wait_for_security_group
+		loop do
+			if security_group = find_security_group
+				if security_group.groupStatus == 'applied'
+					break
+				end
+			end
+			sleep 5
+		end
+	end
+
+	def delete_security_group
+		return unless find_security_group
+		api.delete_security_group(:group_name => 'something')
+		"done"
+	end
+
+	def find_security_group
+		group_info = api.describe_security_groups(:group_name => 'something').securityGroupInfo
+		if group_info
+			group_info.item.find {|group| group.groupName }
+		else
+			nil
+		end
+	rescue NIFTY::ResponseError => e
+		nil
 	end
 
 	def open_firewall(port)

@@ -61,6 +61,7 @@ class CLI < Thor
 			end
 		end
 		some.terminate(inst[:instance_id])
+		some.wait_to_terminate(inst[:instance_id])
 		puts "#{inst[:hostname] || inst[:instance_id]} scheduled for termination"
 	end
 
@@ -76,6 +77,15 @@ class CLI < Thor
 		raise ArgumentError unless port
 		some.close_firewall(port)
 		puts "port #{port} scheduled for open"
+	end
+
+	desc "reset", "delete all the resources created by some (instances, security group, key pair)"
+	def reset
+		some.list.each do |inst|
+			terminate(inst[:instance_id])
+		end
+		task("Delete security group") { some.delete_security_group }
+		task("Delete key pair") { some.delete_keypair }
 	end
 
 	no_tasks do
