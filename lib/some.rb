@@ -192,12 +192,15 @@ class Some
 	end
 
 	def ssh(hostname, cmds)
+		STDOUT.puts
 		Net::SSH.start(hostname, config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
 			File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
-				f.write(ssh.exec!(cmds.join(' && ')))
+				ssh.exec!(cmds.join(' && ')) do |ch, stream, data|
+					f.write(data)
+					STDOUT.print data
+				end
 			end
 		end
-		# TODO: abort "failed\nCheck ~/.some/ssh.log for the output"
 	end
 
 	def terminate(instance_id)
