@@ -19,7 +19,8 @@ class Some
 			:key_name => 'something',
 			:security_group => 'something',
 			:availability_zone => config['availability_zone'],
-			:disable_api_termination => false
+			:disable_api_termination => false,
+			:accounting_type => 2
 		)
 		result.instancesSet.item[0].instanceId
 	end
