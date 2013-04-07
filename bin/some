@@ -79,6 +79,13 @@ class CLI < Thor
 		puts "port #{port} scheduled for open"
 	end
 
+	desc "fwlist", "list firewall rules"
+	def fwlist
+		some.firewall_list.each do |fw|
+			printf "%5s %5s %3s     %s\n", fw[:ip_protocol], fw[:from_port], fw[:in_out], (fw[:group] || fw[:cidr])
+		end
+	end
+
 	desc "reset", "delete all the resources created by some (instances, security group, key pair)"
 	def reset
 		some.list.each do |inst|

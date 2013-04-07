@@ -31,6 +31,21 @@ class Some
 		@list ||= fetch_list
 	end
 
+	def firewall_list
+		security_group = find_security_group
+		return [] if security_group.nil? || security_group.ipPermissions.nil?
+
+		security_group.ipPermissions.item.map do |row|
+			{
+				:ip_protocol => row["ipProtocol"],
+				:from_port => row["fromPort"],
+				:in_out => row["inOut"],
+				:group => row["groupName"],
+                                :cidr => (row["ipRanges"]["item"].first["cidrIp"] rescue nil)
+			}
+		end
+	end
+
 	def images
 		result = api.describe_images
 		return [] unless result.imagesSet
