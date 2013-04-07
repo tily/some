@@ -21,7 +21,8 @@ class Some
 			:security_group => 'something',
 			:availability_zone => config['availability_zone'],
 			:disable_api_termination => false,
-			:accounting_type => 2
+			:accounting_type => 2,
+			:agreement => true # for RHEL subscription
 		)
 		result.instancesSet.item[0].instanceId
 	end
