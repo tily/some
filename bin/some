@@ -88,6 +88,13 @@ class CLI < Thor
 		task("Delete key pair") { some.delete_keypair }
 	end
 
+	desc "images", "list images"
+	def images
+		some.images.each do |img|
+			printf "%-5s %s %s\n", img[:image_id], img[:availability_zone], img[:name]
+		end
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new

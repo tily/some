@@ -30,6 +30,19 @@ class Some
 		@list ||= fetch_list
 	end
 
+	def images
+		result = api.describe_images
+		return [] unless result.imagesSet
+
+		result.imagesSet.item.map do |row|
+			{
+				:image_id => row["imageId"],
+				:name => row["name"],
+				:availability_zone => row["availabilityZone"]
+			}
+		end
+	end
+
 	def volumes
 		result = api.describe_volumes
 		return [] unless result.volumeSet
