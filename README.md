@@ -107,6 +107,10 @@ NIFTY Cloud 上で手軽にサーバーを立ち上げることができます�
  * サーバー作成の際に something という名前の SSH キーと FW を作成します
  * SSH キーは ~/.some/keypair.pem に保存されます
 
+## TODO
+
+ * image_id=17 (Ubuntu 10.04) で bootstrap できない (apt-get update; apt-get install -y curl する必要あり)
+
 ## ライセンス
 
 [sumo](http://github.com/adamwiggins/sumo) と同じく MIT ライセンスで公開します。
