@@ -76,7 +76,7 @@ class CLI < Thor
 	def closefw(port)
 		raise ArgumentError unless port
 		some.close_firewall(port)
-		puts "port #{port} scheduled for open"
+		puts "port #{port} scheduled for close"
 	end
 
 	desc "fwlist", "list firewall rules"
