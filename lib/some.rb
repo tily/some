@@ -126,7 +126,9 @@ class Some
 				instances << {
 					:instance_id => item.instanceId,
 					:status => item.instanceState.name,
-					:hostname => item.dnsName
+					:hostname => item.dnsName,
+					:public_ip => item.ipAddress,
+					:private_ip => item.privateIpAddress
 				}
 			end
 		end
@@ -227,8 +229,10 @@ class Some
 	end
 
 	def setup_role(hostname, role)
+                dna = JSON.parse(config['role'][role])
+                dna.update("some" => {"instances" => list})
 		commands = [
-			"echo \'#{config['role'][role]}\' > /etc/chef/dna.json",
+			"echo \'#{JSON.pretty_generate(dna)}\' > /etc/chef/dna.json",
 			"chef-solo -r #{config['cookbooks_url']}"
 		]
 		ssh(hostname, commands)
