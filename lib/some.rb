@@ -2,9 +2,10 @@ require 'net/ssh'
 require 'NIFTY'
 require 'yaml'
 require 'socket'
+require 'json'
 
 class Some
-	def launch
+	def launch(name=nil)
 		ami = config['ami']
 		raise "No AMI selected" unless ami
 
@@ -15,6 +16,7 @@ class Some
 		open_firewall(22)
 
 		result = api.run_instances(
+			:instance_id => name,
 			:image_id => ami,
 			:instance_type => config['instance_size'] || 'mini',
 			:key_name => 'something',

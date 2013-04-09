@@ -7,8 +7,9 @@ require 'thor'
 
 class CLI < Thor
 	desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
+	option :name, :type => :string, :aliases => '-n', :desc => 'instance name'
 	def launch(role=nil)
-		id = task("Launch instance") { some.launch }
+		id = task("Launch instance") { some.launch(options[:name]) }
 		host = task("Acquire hostname") { some.wait_for_hostname(id) }
 		task("Wait for ssh") { some.wait_for_ssh(host) }
 
