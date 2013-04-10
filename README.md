@@ -110,6 +110,7 @@ NIFTY Cloud 上で手軽にサーバーを立ち上げることができます�
 ## TODO
 
  * image_id=17 (Ubuntu 10.04) で bootstrap できない (apt-get update; apt-get install -y curl する必要あり)
+ * かっこいいロゴを github ページにつける、あるいは github pages を使ってほーむぺーじを作る
 
 ## ライセンス
 
