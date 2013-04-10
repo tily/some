@@ -33,6 +33,15 @@ class Some
 		@list ||= fetch_list
 	end
 
+	def capfile
+		[
+			%Q(set :user, "#{config["user"]}"),
+			%Q(ssh_options[:keys] = "#{keypair_file}"),
+			%Q(ssh_options[:passphrase] = "#{config["password"]}"),
+			list.map {|inst| %Q(server "#{inst[:public_ip]}", "#{inst[:instance_id]}")}
+		].flatten.join("\n")
+	end
+
 	def firewall_list
 		security_group = find_security_group
 		return [] if security_group.nil? || security_group.ipPermissions.nil?
