@@ -116,6 +116,11 @@ class CLI < Thor
 		system "cap -f ~/.some/Capfile #{args.join(' ')}"
 	end
 
+	desc "cache", "cache instance list"
+	def cache(*args)
+		some.cache_list
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new

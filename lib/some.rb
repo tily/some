@@ -125,6 +125,7 @@ class Some
 	end
 
 	def fetch_list
+		return YAML.load File.read(ENV["HOME"] + "/.some/cache") if File.exists?(ENV["HOME"] + "/.some/cache")
 		result = api.describe_instances
 		return [] unless result.reservationSet
 
@@ -142,6 +143,12 @@ class Some
 			end
 		end
 		instances
+	end
+
+	def cache_list
+		File.open(ENV["HOME"] + "/.some/cache", "w") do |f|
+			f.write(fetch_list.to_yaml)
+		end
 	end
 
 	def find(id_or_hostname)
