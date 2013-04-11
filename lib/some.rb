@@ -1,3 +1,4 @@
+require 'net/scp'
 require 'net/ssh'
 require 'NIFTY'
 require 'yaml'
@@ -148,6 +149,36 @@ class Some
 	def cache_list
 		File.open(ENV["HOME"] + "/.some/cache", "w") do |f|
 			f.write(fetch_list.to_yaml)
+		end
+	end
+
+	def sync
+		ohai = Hash.new{|h,k| h[k] = ""}
+		list.each do |inst|
+			puts "-----> getting ohai.json from #{inst[:instance_id]}"
+		        Net::SSH.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
+		        	File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
+		        		ssh.exec!("mkdir -p /var/chef/data_bags/node && ohai --log_level fatal") do |ch, stream, data|
+						ohai[inst[:instance_id]] += data if stream == :stdout
+					end
+		        	end
+		        end
+		end
+		list.each do |inst|
+			puts "-----> pushing ohai.json list to #{inst[:instance_id]}"
+		        Net::SCP.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |scp|
+				list.each do |inst|
+					json = {
+						"id" => inst[:instance_id],
+						"name" => inst[:instance_id],
+						"chef_environment" => "_default",
+						"json_class" => "Chef::Node",
+						"run_list" => [],
+						"automatic" => JSON.parse(ohai[inst[:instance_id]])
+					}
+					scp.upload! StringIO.new(JSON.pretty_generate(json)), "/var/chef/data_bags/node/#{inst[:instance_id]}.json"
+				end
+		        end
 		end
 	end
 

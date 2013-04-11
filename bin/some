@@ -121,6 +121,11 @@ class CLI < Thor
 		some.cache_list
 	end
 
+	desc "sync", "sync"
+	def sync
+		some.sync
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new
