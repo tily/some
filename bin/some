@@ -121,7 +121,7 @@ class CLI < Thor
 		some.cache_list
 	end
 
-	desc "sync", "sync"
+	desc "sync", "sync nodes"
 	def sync
 		some.sync
 	end
