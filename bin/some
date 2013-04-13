@@ -125,6 +125,14 @@ class CLI < Thor
 		some.sync
 	end
 
+	desc "batch 'command1, command2'", "batch execute"
+	def batch(arg)
+		commands = arg.split(";")
+		commands.each do |x|
+			system("some #{x}")
+		end
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new
