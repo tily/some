@@ -232,7 +232,6 @@ class Some
 
 	def wait_to_stop(instance_id)
 		raise ArgumentError unless instance_id
-		api.stop_instances(:instance_id => [ instance_id ])
 		loop do
 			if inst = instance_info(instance_id)
 				if inst[:status] == 'stopped'

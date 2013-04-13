@@ -62,9 +62,8 @@ class CLI < Thor
 	def terminate(id=nil)
 		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
 		if inst[:status] != 'stopped'
-			task 'Wait to stop' do
-				some.wait_to_stop(inst[:instance_id])
-			end
+		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+		        task('Wait to stop') { some.wait_to_stop(inst[:instance_id]) }
 		end
 		some.terminate(inst[:instance_id])
 		some.wait_to_terminate(inst[:instance_id])
