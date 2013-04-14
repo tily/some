@@ -194,7 +194,7 @@ class CLI < Thor
 			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
 		end
 
-		device ||= '/dev/sdc1'
+		device ||= '/dev/sdb'
 		task("Attach #{vol_id} to #{inst_id} as #{device}") do
 			some.attach(vol_id, inst[:instance_id], device)
 		end
@@ -202,10 +202,8 @@ class CLI < Thor
 		some.reload
 		inst = some.find(inst[:instance_id])
 		if inst[:status] == 'stopped' && orig_status == 'running'
-			task("Wait to start") do
-				task('Start instance') { some.start(inst[:instance_id]); "done" }
-				task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
-			end
+			task('Start instance') { some.start(inst[:instance_id]); "done" }
+			task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
 		end
 	end
 
