@@ -13,6 +13,7 @@ Jeweler::Tasks.new do |s|
 	s.add_dependency "nifty-cloud-sdk", "1.11.beta1"
 	s.add_dependency "thor"
 	s.add_dependency "net-ssh"
+	s.add_dependency "capistrano"
 end
 
 Jeweler::RubyforgeTasks.new
