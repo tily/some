@@ -34,6 +34,10 @@ class Some
 		@list ||= fetch_list
 	end
 
+	def reload
+		@list = fetch_list
+	end
+
 	def capfile
 		[
 			%Q(set :user, "#{config["user"]}"),
@@ -112,10 +116,12 @@ class Some
 		"done"
 	end
 
-	def create_volume(size)
+	def create_volume(vol_id, inst_id)
 		result = api.create_volume(
+			:volume_id => vol_id,
+			:instance_id => inst_id,
 			:availability_zone => config['availability_zone'],
-			:size => size.to_s
+			:size => 1
 		)
 		result["volumeId"]
 	end
@@ -209,6 +215,10 @@ class Some
 		list_by_status('pending')
 	end
 
+	def stopped
+		list_by_status('stopped')
+	end
+
 	def list_by_status(status)
 		list.select { |i| i[:status] == status }
 	end
@@ -295,6 +305,14 @@ class Some
 				end
 			end
 		end
+	end
+
+	def start(instance_id)
+		api.start_instances(:instance_id => [ instance_id ])
+	end
+
+	def stop(instance_id)
+		api.stop_instances(:instance_id => [ instance_id ])
 	end
 
 	def terminate(instance_id)

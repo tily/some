@@ -133,6 +133,106 @@ class CLI < Thor
 		end
 	end
 
+	desc "volumes", "list all volumes"
+	def volumes
+		some.volumes.each do |v|
+			printf "%-10s %4sGB %10s %15s %15s\n", v[:volume_id], v[:size], v[:status], v[:instance], v[:device]
+		end
+	end
+	desc "start [<instance_id or hostname>]", "start specified instance or first available"
+	option :wait, :aliases => '-w', :desc => 'wait to start'
+	def start(id=nil)
+		inst = some.find(id) || (some.stopped).first || abort("No stopped instances")
+		task('Start instance') { some.start(inst[:instance_id]); "done" }
+		task('Wait to start') { some.wait_for_hostname(inst[:instance_id]) } if options[:wait]
+	end
+
+	desc "stop [<instance_id or hostname>]", "stop specified instance or first available"
+	option :wait, :aliases => '-w', :desc => 'wait to stop'
+	def stop(id=nil)
+		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
+		task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+		task('Wait to stop') { some.wait_to_stop(inst[:instance_id]) } if options[:wait]
+	end
+
+
+	desc "create_volume [<instance_id or hostname>]", "create a volume"
+	option :name, :type => :string, :aliases => '-n', :desc => 'volume name'
+	def create_volume(id=nil)
+		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
+
+		orig_status = inst[:status]
+		if inst[:status] == 'running'
+		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
+		end
+
+		task("Create 100GB volume") { some.create_volume(options[:name], inst[:instance_id]) }
+
+		some.reload
+		inst = some.find(inst[:instance_id])
+		if inst[:status] == 'stopped' && orig_status == 'running'
+		        task('Start instance') { some.start(inst[:instance_id]); "done" }
+			task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
+		end
+	end
+
+	desc "destroy_volume [<volume_id>]", "destroy a volume"
+	def destroy_volume(volume=nil)
+		vol_id = (some.find_volume(volume) || some.nondestroyed_volumes.first || abort("No volumes"))[:volume_id]
+		task("Destroy volume") { some.destroy_volume(vol_id) }
+	end
+
+	desc "attach [<volume_id>] [<instance_id or hostname>] [<device>]", "attach volume to running instance"
+	def attach(volume=nil, inst_id=nil, device=nil)
+		vol_id = (some.find_volume(volume) || some.available_volumes.first || abort("No available volumes"))[:volume_id]
+		inst = (some.find(inst_id) || some.running.first || abort("No running instances"))
+
+		orig_status = inst[:status]
+		if inst[:status] == 'running'
+		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
+		end
+
+		device ||= '/dev/sdc1'
+		task("Attach #{vol_id} to #{inst_id} as #{device}") do
+			some.attach(vol_id, inst[:instance_id], device)
+		end
+
+		some.reload
+		inst = some.find(inst[:instance_id])
+		if inst[:status] == 'stopped' && orig_status == 'running'
+			task("Wait to start") do
+		                task('Start instance') { some.start(inst[:instance_id]); "done" }
+                                task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
+			end
+		end
+	end
+
+	desc "detach [<volume_id>]", "detach volume from instance"
+	def detach(volume=nil)
+		volume = (some.find_volume(volume) || some.attached_volumes.first || abort("No attached volumes"))
+		vol_id = volume[:volume_id]
+		inst = some.find(volume[:instance_id])
+
+		orig_status = inst[:status]
+		if inst[:status] == 'running'
+		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
+		end
+
+		task("Detach #{vol_id}") { some.detach(vol_id) }
+
+		some.reload
+		inst = some.find(inst[:instance_id])
+		if inst[:status] == 'stopped' && orig_status == 'running'
+			task("Wait to start") do
+				some.start(inst[:instance_id])
+				some.wait_for_hostname(inst[:instance_id])
+			end
+		end
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new
