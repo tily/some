@@ -153,6 +153,7 @@ class Some
 	end
 
 	def sync
+                # TODO: raise error if ohai is not installed on the server
 		ohai = Hash.new{|h,k| h[k] = ""}
 		list.each do |inst|
 			puts "-----> getting ohai.json from #{inst[:instance_id]}"
