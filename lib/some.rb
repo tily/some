@@ -57,7 +57,7 @@ class Some
 				:from_port => row["fromPort"],
 				:in_out => row["inOut"],
 				:group => row["groupName"],
-                                :cidr => (row["ipRanges"]["item"].first["cidrIp"] rescue nil)
+				:cidr => (row["ipRanges"]["item"].first["cidrIp"] rescue nil)
 			}
 		end
 	end
@@ -159,21 +159,21 @@ class Some
 	end
 
 	def sync
-                # TODO: raise error if ohai is not installed on the server
+		# TODO: raise error if ohai is not installed on the server
 		ohai = Hash.new{|h,k| h[k] = ""}
 		list.each do |inst|
 			puts "-----> getting ohai.json from #{inst[:instance_id]}"
-		        Net::SSH.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
-		        	File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
-		        		ssh.exec!("mkdir -p /var/chef/data_bags/node && ohai --log_level fatal") do |ch, stream, data|
+			Net::SSH.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |ssh|
+				File.open("#{ENV['HOME']}/.some/ssh.log", 'w') do |f|
+					ssh.exec!("mkdir -p /var/chef/data_bags/node && ohai --log_level fatal") do |ch, stream, data|
 						ohai[inst[:instance_id]] += data if stream == :stdout
 					end
-		        	end
-		        end
+				end
+			end
 		end
 		list.each do |inst|
 			puts "-----> pushing ohai.json list to #{inst[:instance_id]}"
-		        Net::SCP.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |scp|
+			Net::SCP.start(inst[:hostname], config['user'], :keys => [keypair_file], :passphrase => config['password']) do |scp|
 				list.each do |inst|
 					json = {
 						"id" => inst[:instance_id],
@@ -185,7 +185,7 @@ class Some
 					}
 					scp.upload! StringIO.new(JSON.pretty_generate(json)), "/var/chef/data_bags/node/#{inst[:instance_id]}.json"
 				end
-		        end
+			end
 		end
 	end
 
@@ -286,8 +286,8 @@ class Some
 	end
 
 	def setup_role(hostname, role)
-                dna = JSON.parse(config['role'][role])
-                dna.update("some" => {"instances" => list})
+		dna = JSON.parse(config['role'][role])
+		dna.update("some" => {"instances" => list})
 		commands = [
 			"echo \'#{JSON.pretty_generate(dna)}\' > /etc/chef/dna.json",
 			"chef-solo -r #{config['cookbooks_url']}"

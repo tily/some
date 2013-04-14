@@ -62,8 +62,8 @@ class CLI < Thor
 	def terminate(id=nil)
 		inst = some.find(id) || (some.running | some.pending).first || abort("No running or pending instances")
 		if inst[:status] != 'stopped'
-		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
-		        task('Wait to stop') { some.wait_to_stop(inst[:instance_id]) }
+			task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task('Wait to stop') { some.wait_to_stop(inst[:instance_id]) }
 		end
 		some.terminate(inst[:instance_id])
 		some.wait_to_terminate(inst[:instance_id])
@@ -163,7 +163,7 @@ class CLI < Thor
 
 		orig_status = inst[:status]
 		if inst[:status] == 'running'
-		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
 			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
 		end
 
@@ -172,7 +172,7 @@ class CLI < Thor
 		some.reload
 		inst = some.find(inst[:instance_id])
 		if inst[:status] == 'stopped' && orig_status == 'running'
-		        task('Start instance') { some.start(inst[:instance_id]); "done" }
+			task('Start instance') { some.start(inst[:instance_id]); "done" }
 			task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
 		end
 	end
@@ -190,7 +190,7 @@ class CLI < Thor
 
 		orig_status = inst[:status]
 		if inst[:status] == 'running'
-		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
 			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
 		end
 
@@ -203,8 +203,8 @@ class CLI < Thor
 		inst = some.find(inst[:instance_id])
 		if inst[:status] == 'stopped' && orig_status == 'running'
 			task("Wait to start") do
-		                task('Start instance') { some.start(inst[:instance_id]); "done" }
-                                task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
+				task('Start instance') { some.start(inst[:instance_id]); "done" }
+				task("Wait to start") { some.wait_for_hostname(inst[:instance_id]) }
 			end
 		end
 	end
@@ -217,7 +217,7 @@ class CLI < Thor
 
 		orig_status = inst[:status]
 		if inst[:status] == 'running'
-		        task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
+			task('Stop Instance') { some.stop(inst[:instance_id]); "done" }
 			task("Wait to stop") { some.wait_to_stop(inst[:instance_id]) }
 		end
 
