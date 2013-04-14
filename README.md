@@ -107,6 +107,44 @@ NIFTY Cloud 上で手軽にサーバーを立ち上げることができます�
  * サーバー作成の際に something という名前の SSH キーと FW を作成します
  * SSH キーは ~/.some/keypair.pem に保存されます
 
+## その他のコマンド
+
+作者が欲しい機能を自己満足で盛り込んでいくコーナー。
+
+### some reset
+
+some から作成したインスタンスを全て削除し、some が裏側で作成した something という名前の FW と something という名前のキーペアを削除する。
+
+### some cap
+
+some コマンドで作成したインスタンスに対して capistrano を実行できる。
+
+    some cap shell
+    some cap invoke ROLES="server1,server2" COMMAND="hostname"
+
+Capfile は some list -f capfile で参照可能。
+
+### some cache
+
+インスタンス一覧を ~/.some/cache にキャッシュする。
+
+### some sync
+
+some コマンドで作成した全てのインスタンスで ohai を実行して node 情報を取得し、全てのインスタンスの /var/chef/data_bags/hostname.json に配置する。
+[chef-solo-search](https://github.com/edelight/chef-solo-search) と組み合わせると Chef サーバがなくてもレシピ内で search メソッドが使える。
+
+### some batch
+
+some コマンドを一括実行できる。
+
+### some start/stop
+
+インスタンスを起動・停止することができる。
+
+### some volumes/create_volume/attach_volume/detach_volume/destroy_volume
+
+ディスクを作成・一覧・アタッチ・デタッチ・削除することができる。
+
 ## TODO
 
  * image_id=17 (Ubuntu 10.04) で bootstrap できない (apt-get update; apt-get install -y curl する必要あり)
