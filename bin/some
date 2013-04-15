@@ -45,7 +45,7 @@ class CLI < Thor
 	def role(role, id=nil)
 		inst = some.find(id) || some.running.first || abort("No running instances")
 		task "Setup #{role}" do
-			some.setup_role(inst[:hostname], role)
+			some.setup_role(inst[:hostname], role, inst[:instance_id])
 		end
 	end
 

@@ -285,9 +285,9 @@ class Some
 		ssh(hostname, commands)
 	end
 
-	def setup_role(hostname, role)
+	def setup_role(hostname, role, inst_id)
 		dna = JSON.parse(config['role'][role])
-		dna.update("some" => {"instances" => list})
+		dna.update("some" => {"hostname" => inst_id, "instances" => list})
 		commands = [
 			"echo \'#{JSON.pretty_generate(dna)}\' > /etc/chef/dna.json",
 			"chef-solo -r #{config['cookbooks_url']}"
