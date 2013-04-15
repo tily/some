@@ -8,6 +8,7 @@ require 'thor'
 class CLI < Thor
 	desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
 	option :name, :type => :string, :aliases => '-n', :desc => 'instance name'
+	option :skip, :aliases => '-s', :desc => 'skip ssh login'
 	def launch(role=nil)
 		id = task("Launch instance") { some.launch(options[:name]) }
 		host = task("Acquire hostname") { some.wait_for_hostname(id) }
@@ -15,11 +16,13 @@ class CLI < Thor
 
 		if role
 			task("Bootstrap chef") { some.bootstrap_chef(host) }
-			task("Setup #{role}") { some.setup_role(host, role) }
-		else
-			puts "\nLogging you in via ssh.  Type 'exit' or Ctrl-D to return to your local system."
-			puts '-' * 78
-			connect_ssh(host)
+			task("Setup #{role}") { some.setup_role(host, role, id) }
+                else
+			unless options[:skip]
+				puts "\nLogging you in via ssh.  Type 'exit' or Ctrl-D to return to your local system."
+				puts '-' * 78
+				connect_ssh(host)
+			end
 		end
 	end
 
