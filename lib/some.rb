@@ -121,7 +121,8 @@ class Some
 			:volume_id => vol_id,
 			:instance_id => inst_id,
 			:availability_zone => config['availability_zone'],
-			:size => 1
+			:size => 1,
+			:accounting_type => 2
 		)
 		result["volumeId"]
 	end
