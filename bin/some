@@ -234,6 +234,13 @@ class CLI < Thor
 		end
 	end
 
+	desc "ip <instance_id>", "print instance ip address"
+	def ip(inst_id)
+		inst = some.find(inst_id)
+		raise ArgumentError if inst.nil?
+		print inst[:public_ip]
+	end
+
 	no_tasks do
 		def some
 			@some ||= Some.new
