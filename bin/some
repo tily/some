@@ -105,9 +105,14 @@ class CLI < Thor
 	end
 
 	desc "images", "list images"
+	option :format, :type => :string, :aliases => '-f', :desc => 'format (json)'
 	def images
-		some.images.each do |img|
-			printf "%-5s %s %s\n", img[:image_id], img[:availability_zone], img[:name]
+		if options[:format] == 'json'
+			puts JSON.pretty_generate(some.images)
+		else
+			some.images.each do |img|
+				printf "%-5s %s %s\n", img[:image_id], img[:availability_zone], img[:name]
+			end
 		end
 	end
 
