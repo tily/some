@@ -6,8 +6,8 @@ require 'socket'
 require 'json'
 
 class Some
-	def launch(name=nil)
-		ami = config['ami']
+	def launch(name=nil, opts={})
+		ami = opts[:image_id] || config['ami']
 		raise "No AMI selected" unless ami
 
 		create_keypair unless File.exists? keypair_file
