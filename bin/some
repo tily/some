@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
+$:.unshift File.dirname(__FILE__) + '/../lib' unless $:.include? File.dirname(__FILE__) + '/../lib'
 
 require 'rubygems'
-require File.dirname(__FILE__) + '/../lib/some'
-
+require 'some'
 require 'thor'
 
 class CLI < Thor
